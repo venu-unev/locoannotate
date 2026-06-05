@@ -141,7 +141,7 @@ def main() -> None:
 
     show_review = slugify(annotator).lower() == "venus"
     values = draw_annotation_form(existing, brand_vocab, row_id, show_review)
-    submitted = draw_navigation(len(manifest))
+    submitted = draw_navigation(len(manifest), show_review)
 
     if submitted:
         record = build_annotation_record(row, values)
@@ -852,8 +852,13 @@ def build_annotation_record(row: dict[str, Any], values: dict[str, Any]) -> dict
     return record
 
 
-def draw_navigation(total_rows: int) -> bool:
+def draw_navigation(total_rows: int, show_review: bool) -> bool:
     st.divider()
+    if not show_review:
+        left, center, right = st.columns([1.4, 1, 1.4])
+        with center:
+            return st.button("Save", type="primary", use_container_width=True)
+
     prev_col, index_col, jump_col, next_col, save_col = st.columns([1, 1.1, 1.2, 1, 1.15])
     with prev_col:
         if st.button("Previous", use_container_width=True):
