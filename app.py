@@ -141,7 +141,9 @@ def main() -> None:
 
     show_review = slugify(annotator).lower() == "venus"
     values = draw_annotation_form(existing, brand_vocab, row_id, show_review)
-    submitted = st.button("Save Annotation", type="primary", use_container_width=True)
+    save_left, save_center, save_right = st.columns([1.4, 1, 1.4])
+    with save_center:
+        submitted = st.button("Save Annotation", type="primary", use_container_width=True)
 
     if submitted:
         record = build_annotation_record(row, values)
@@ -447,11 +449,53 @@ def draw_sidebar(
     else:
         st.sidebar.caption("Autosave: local backup")
 
+    draw_sidebar_instructions()
+
     if st.sidebar.button("Switch annotator", use_container_width=True):
         st.session_state["annotator"] = ""
         st.session_state["row_index"] = 0
         st.session_state["reset_to_next_unfinished"] = False
         st.rerun()
+
+
+def draw_sidebar_instructions() -> None:
+    st.sidebar.divider()
+    st.sidebar.header("Instructions")
+
+    with st.sidebar.expander("Visibility", expanded=True):
+        st.markdown(
+            """
+            **Complete**: the text is readable enough to enter confidently.
+
+            **Partial**: only part is visible, or the text is faded/blurred but still partly useful.
+
+            **Not visible**: you cannot read that field from the images.
+            """
+        )
+
+    with st.sidebar.expander("Model fields", expanded=True):
+        st.markdown(
+            """
+            **Family** is the main model name: `Defender`, `Dueler`, `Scorpion`, `Roadian`.
+
+            **Variant** is the specific version: `LTX M/S`, `H/L`, `Zero`, `ATX`, `P7`.
+
+            **Extra text** is visible sidewall wording that may help: `Touring`, `All Season`, `M+S`.
+            """
+        )
+
+    with st.sidebar.expander("Dimensions"):
+        st.markdown(
+            """
+            Common format: `225/60R18`
+
+            With prefix/load/speed: `LT285/60R20 125Q`
+
+            With suffix: `225/45ZR17 M+S`
+
+            Odd format: use **More options -> Manual override**, e.g. `31x10.50R15`.
+            """
+        )
 
 
 def draw_progress(
