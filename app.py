@@ -187,11 +187,10 @@ def load_brand_vocab() -> list[str]:
 
 
 def show_login_screen(manifest: pd.DataFrame, sheet) -> None:
-    st.markdown("### Annotator Login")
-    st.caption("Enter your assigned annotator ID, then click Continue. Your progress is saved automatically.")
-
-    col_left, col_right = st.columns([1, 1])
-    with col_left:
+    left, center, right = st.columns([1.2, 1, 1.2])
+    with center:
+        st.markdown("### Annotator Login")
+        st.caption("Enter your assigned ID, then click Continue.")
         annotator_id = st.text_input(
             "Annotator ID",
             placeholder="",
@@ -205,8 +204,6 @@ def show_login_screen(manifest: pd.DataFrame, sheet) -> None:
                 st.session_state["annotator"] = cleaned
                 st.session_state["reset_to_next_unfinished"] = True
                 st.rerun()
-    with col_right:
-        st.metric("Rows in dataset", len(manifest))
 
 
 def find_next_unfinished_index(
