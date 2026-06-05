@@ -70,6 +70,14 @@ VIEW_CANDIDATES = {
     "rear": ["rear_url", "rear", "Rear"],
     "parallel": ["parallel_url", "parallel", "Parallel"],
 }
+DIMENSION_PREFIXES = ["", "P", "LT", "ST"]
+DIMENSION_WIDTHS = [str(value) for value in range(125, 396, 10)]
+DIMENSION_ASPECTS = [str(value) for value in range(20, 91, 5)]
+DIMENSION_CONSTRUCTIONS = ["R", "ZR"]
+DIMENSION_RIMS = [str(value) for value in range(10, 27)]
+DIMENSION_LOADS = [""] + [str(value) for value in range(60, 131)]
+DIMENSION_SPEEDS = ["", "L", "M", "N", "P", "Q", "R", "S", "T", "H", "V", "W", "Y"]
+DIMENSION_SUFFIXES = ["", "M+S", "XL", "SL", "C", "Run Flat"]
 
 
 def main() -> None:
@@ -510,11 +518,7 @@ def draw_annotation_form(
     with label_cols[2]:
         with st.container(border=True):
             st.markdown("#### Dimensions")
-            values["dimensions"] = st.text_input(
-                "Dimensions",
-                value=str(existing.get("dimensions", "")),
-                key=f"{row_id}_dimensions",
-            )
+            values["dimensions"] = draw_dimensions_input(existing, row_id)
             values["dimensions_status"] = draw_status_radio("dimensions", existing, row_id)
 
     st.divider()
@@ -568,6 +572,148 @@ def draw_brand_input(existing: dict[str, Any], brand_vocab: list[str], row_id: s
     if selected:
         return selected
     return existing_brand
+
+
+def draw_dimensions_input(existing: dict[str, Any], row_id: str) -> str:
+    existing_value = str(existing.get("dimensions", "")).strip()
+    parsed = parse_dimension(existing_value)
+    manual_default = bool(existing_value and not parsed)
+    manual = st.checkbox(
+        "Manual",
+        value=manual_default,
+        key=f"{row_id}_dimensions_manual",
+    )
+    if manual:
+        return st.text_input(
+            "Dimensions",
+            value=existing_value,
+            key=f"{row_id}_dimensions_manual_value",
+        ).strip()
+
+    parsed = parsed or {}
+    top_cols = st.columns([0.8, 1.1, 1.1])
+    with top_cols[0]:
+        prefix = st.selectbox(
+            "Prefix",
+            DIMENSION_PREFIXES,
+            index=option_index(DIMENSION_PREFIXES, parsed.get("prefix", "")),
+            key=f"{row_id}_dimension_prefix",
+        )
+    with top_cols[1]:
+        width = st.selectbox(
+            "Width",
+            DIMENSION_WIDTHS,
+            index=option_index(DIMENSION_WIDTHS, parsed.get("width", "")),
+            placeholder="Width",
+            key=f"{row_id}_dimension_width",
+        )
+    with top_cols[2]:
+        aspect = st.selectbox(
+            "Aspect",
+            DIMENSION_ASPECTS,
+            index=option_index(DIMENSION_ASPECTS, parsed.get("aspect", "")),
+            placeholder="Aspect",
+            key=f"{row_id}_dimension_aspect",
+        )
+
+    mid_cols = st.columns([1, 1, 1])
+    with mid_cols[0]:
+        construction = st.selectbox(
+            "Type",
+            DIMENSION_CONSTRUCTIONS,
+            index=option_index(DIMENSION_CONSTRUCTIONS, parsed.get("construction", "R")),
+            key=f"{row_id}_dimension_construction",
+        )
+    with mid_cols[1]:
+        rim = st.selectbox(
+            "Rim",
+            DIMENSION_RIMS,
+            index=option_index(DIMENSION_RIMS, parsed.get("rim", "")),
+            placeholder="Rim",
+            key=f"{row_id}_dimension_rim",
+        )
+    with mid_cols[2]:
+        load = st.selectbox(
+            "Load",
+            DIMENSION_LOADS,
+            index=option_index(DIMENSION_LOADS, parsed.get("load", "")),
+            key=f"{row_id}_dimension_load",
+        )
+
+    bottom_cols = st.columns([1, 1])
+    with bottom_cols[0]:
+        speed = st.selectbox(
+            "Speed",
+            DIMENSION_SPEEDS,
+            index=option_index(DIMENSION_SPEEDS, parsed.get("speed", "")),
+            key=f"{row_id}_dimension_speed",
+        )
+    with bottom_cols[1]:
+        suffix = st.selectbox(
+            "Suffix",
+            DIMENSION_SUFFIXES,
+            index=option_index(DIMENSION_SUFFIXES, parsed.get("suffix", "")),
+            key=f"{row_id}_dimension_suffix",
+        )
+
+    preview = format_dimension(prefix, width, aspect, construction, rim, load, speed, suffix)
+    st.text_input("Preview", value=preview, disabled=True, key=f"{row_id}_dimension_preview")
+    return preview
+
+
+def parse_dimension(value: str) -> dict[str, str]:
+    cleaned = " ".join(value.strip().split())
+    if not cleaned:
+        return {}
+    pattern = re.compile(
+        r"^(?P<prefix>P|LT|ST)?\s*"
+        r"(?P<width>\d{3})\s*/\s*"
+        r"(?P<aspect>\d{2})\s*"
+        r"(?P<construction>ZR|R)\s*"
+        r"(?P<rim>\d{2})"
+        r"(?:\s*(?P<tail>.*))?$",
+        re.IGNORECASE,
+    )
+    match = pattern.match(cleaned)
+    if not match:
+        return {}
+
+    parsed = {key: (value or "").upper() for key, value in match.groupdict().items()}
+    tail = parsed.pop("tail", "")
+    if tail:
+        tail_match = re.fullmatch(r"(?P<load>\d{2,3})(?P<speed>[A-Z])?(?:\s+(?P<suffix>.+))?", tail)
+        if tail_match:
+            parsed.update({key: value or "" for key, value in tail_match.groupdict().items()})
+        else:
+            parsed["suffix"] = tail
+    return parsed
+
+
+def format_dimension(
+    prefix: str | None,
+    width: str | None,
+    aspect: str | None,
+    construction: str | None,
+    rim: str | None,
+    load: str | None,
+    speed: str | None,
+    suffix: str | None,
+) -> str:
+    if not width or not aspect or not construction or not rim:
+        return ""
+    base = f"{prefix or ''}{width}/{aspect}{construction}{rim}"
+    service = f"{load or ''}{speed or ''}"
+    parts = [base]
+    if service:
+        parts.append(service)
+    if suffix:
+        parts.append(suffix)
+    return " ".join(parts)
+
+
+def option_index(options: list[str], value: Any) -> int | None:
+    cleaned = str(value or "").strip()
+    return options.index(cleaned) if cleaned in options else None
 
 
 def draw_status_radio(field: str, existing: dict[str, Any], row_id: str) -> str:
