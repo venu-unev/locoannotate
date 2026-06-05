@@ -191,12 +191,14 @@ def show_login_screen(manifest: pd.DataFrame, sheet) -> None:
     with center:
         st.markdown("### Annotator Login")
         st.caption("Enter your assigned ID, then click Continue.")
-        annotator_id = st.text_input(
-            "Annotator ID",
-            placeholder="",
-            key="login_annotator_input",
-        )
-        if st.button("Continue", type="primary", use_container_width=True):
+        with st.form("login_form", clear_on_submit=False):
+            annotator_id = st.text_input(
+                "Annotator ID",
+                placeholder="",
+                key="login_annotator_input",
+            )
+            submitted = st.form_submit_button("Continue", type="primary", use_container_width=True)
+        if submitted:
             cleaned = annotator_id.strip()
             if len(cleaned) < 2:
                 st.error("Please enter at least 2 characters.")
