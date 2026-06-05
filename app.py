@@ -97,7 +97,8 @@ def main() -> None:
                 "Google Sheets unavailable; saving local copy only. "
                 "Ask the app admin to check the sheet ID, API setup, or sharing permissions."
             )
-            if st.session_state.get("google_sheet_error"):
+            annotator = str(st.session_state.get("annotator", "")).strip()
+            if slugify(annotator).lower() == "venus" and st.session_state.get("google_sheet_error"):
                 st.sidebar.error(st.session_state["google_sheet_error"])
 
     st.session_state.setdefault("annotator", "")
@@ -290,7 +291,7 @@ def get_google_sheet(spreadsheet_id: str):
             creds = Credentials.from_service_account_file(str(CREDENTIALS_FILE), scopes=GOOGLE_SHEET_SCOPES)
         elif secrets and "gcp_service_account" in secrets:
             creds = Credentials.from_service_account_info(
-                dict(secrets["gcp_service_account"]),
+                build_service_account_info(secrets["gcp_service_account"]),
                 scopes=GOOGLE_SHEET_SCOPES,
             )
         else:
@@ -307,6 +308,15 @@ def get_google_sheet(spreadsheet_id: str):
         message = "".join(traceback.format_exception_only(type(exc), exc)).strip()
         st.session_state["google_sheet_error"] = message or repr(exc)
         return None
+
+
+def build_service_account_info(raw_info: Any) -> dict[str, Any]:
+    info = dict(raw_info)
+    private_key = str(info.get("private_key", "")).strip()
+    if "\\n" in private_key:
+        private_key = private_key.replace("\\n", "\n")
+    info["private_key"] = private_key
+    return info
 
 
 def ensure_sheet_headers(sheet) -> None:

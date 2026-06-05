@@ -109,9 +109,19 @@ google_sheet_id = "your-google-sheet-id"
 [gcp_service_account]
 type = "service_account"
 project_id = "..."
-private_key = "..."
+private_key_id = "..."
+private_key = """
+-----BEGIN PRIVATE KEY-----
+...
+-----END PRIVATE KEY-----
+"""
 client_email = "..."
+client_id = "..."
+auth_uri = "https://accounts.google.com/o/oauth2/auth"
+token_uri = "https://oauth2.googleapis.com/token"
 ```
+
+If you paste the key as one line with `\n` characters, the app will normalize it before connecting. The multiline format above is easier to inspect.
 
 You can also set the sheet ID locally with:
 
