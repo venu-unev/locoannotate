@@ -1,0 +1,3 @@
+row_id,raw_id,front_url,rear_url,parallel_url,Brand,Model,Size
+sample_001,raw_sample_001,https://placehold.co/900x650?text=Front+View,https://placehold.co/900x650?text=Rear+View,https://placehold.co/900x650?text=Parallel+View,Michelin,Defender,225/60R18
+sample_002,raw_sample_002,https://placehold.co/900x650?text=Front+View,https://placehold.co/900x650?text=Rear+View,https://placehold.co/900x650?text=Parallel+View,Bridgestone,Turanza,235/60R18

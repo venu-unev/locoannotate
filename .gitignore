@@ -1,0 +1,7 @@
+outputs/
+credentials.json
+sheet_id.txt
+manifest_path.txt
+.streamlit/secrets.toml
+*.pyc
+__pycache__/
