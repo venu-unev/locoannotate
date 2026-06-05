@@ -20,6 +20,7 @@ except ImportError:  # pragma: no cover - lets local CSV mode run without Sheets
 
 
 APP_DIR = Path(__file__).resolve().parent
+DEFAULT_DEPLOY_MANIFEST = APP_DIR / "manifest.csv"
 DEFAULT_MANIFEST = APP_DIR / "sample_manifest.csv"
 DEFAULT_PROJECT_MANIFEST = (
     APP_DIR.parent / "dataset_exhibit" / "master_gt_dataset_exhibit.csv"
@@ -171,6 +172,8 @@ def get_manifest_path() -> Path:
         return Path(env_value).expanduser()
     if MANIFEST_PATH_FILE.exists():
         return Path(MANIFEST_PATH_FILE.read_text().strip()).expanduser()
+    if DEFAULT_DEPLOY_MANIFEST.exists():
+        return DEFAULT_DEPLOY_MANIFEST
     if DEFAULT_PROJECT_MANIFEST.exists():
         return DEFAULT_PROJECT_MANIFEST
     return DEFAULT_MANIFEST

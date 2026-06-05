@@ -54,10 +54,10 @@ streamlit run apps/tire_annotation_app/app.py
 By default, the app loads the existing project exhibit CSV if available:
 
 ```text
-apps/dataset_exhibit/master_gt_dataset_exhibit.csv
+apps/tire_annotation_app/manifest.csv
 ```
 
-To point the app to a new annotation manifest, create a git-ignored file:
+This checked-in manifest is intended for Streamlit Cloud deployment and contains image URLs only, not prefilled labels. To point a local app to a different annotation manifest, create a git-ignored file:
 
 ```text
 apps/tire_annotation_app/manifest_path.txt
