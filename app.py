@@ -659,12 +659,19 @@ def draw_dimensions_input(existing: dict[str, Any], row_id: str) -> str:
             ).strip()
 
     if manual_override:
-        st.text_input("Saved dimension", value=manual_override, disabled=True, key=f"{row_id}_dimension_preview")
+        draw_dimension_preview(manual_override)
         return manual_override
 
     preview = format_dimension(prefix, width, aspect, construction, rim, load, speed, suffix)
-    st.text_input("Saved dimension", value=preview, disabled=True, key=f"{row_id}_dimension_preview")
+    draw_dimension_preview(preview)
     return preview
+
+
+def draw_dimension_preview(value: str) -> None:
+    if value:
+        st.markdown(f"**Saved dimension:** `{value}`")
+    else:
+        st.caption("Saved dimension will appear after width, aspect, and rim are selected.")
 
 
 def parse_dimension(value: str) -> dict[str, str]:
