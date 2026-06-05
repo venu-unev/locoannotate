@@ -141,9 +141,7 @@ def main() -> None:
 
     show_review = slugify(annotator).lower() == "venus"
     values = draw_annotation_form(existing, brand_vocab, row_id, show_review)
-    save_left, save_center, save_right = st.columns([1.4, 1, 1.4])
-    with save_center:
-        submitted = st.button("Save Annotation", type="primary", use_container_width=True)
+    submitted = draw_navigation(len(manifest))
 
     if submitted:
         record = build_annotation_record(row, values)
@@ -157,8 +155,6 @@ def main() -> None:
         if next_index != row_index:
             st.session_state["row_index"] = next_index
             st.rerun()
-
-    draw_navigation(len(manifest))
 
 
 def load_manifest() -> pd.DataFrame:
@@ -436,6 +432,9 @@ def draw_sidebar(
     event_jsonl: Path,
     sheet,
 ) -> None:
+    draw_sidebar_instructions()
+
+    st.sidebar.divider()
     st.sidebar.header("Session")
     st.sidebar.write(f"Annotator: **{st.session_state.get('annotator', '')}**")
 
@@ -449,8 +448,6 @@ def draw_sidebar(
     else:
         st.sidebar.caption("Autosave: local backup")
 
-    draw_sidebar_instructions()
-
     if st.sidebar.button("Switch annotator", use_container_width=True):
         st.session_state["annotator"] = ""
         st.session_state["row_index"] = 0
@@ -459,7 +456,6 @@ def draw_sidebar(
 
 
 def draw_sidebar_instructions() -> None:
-    st.sidebar.divider()
     st.sidebar.header("Instructions")
 
     with st.sidebar.expander("Visibility", expanded=True):
@@ -856,23 +852,33 @@ def build_annotation_record(row: dict[str, Any], values: dict[str, Any]) -> dict
     return record
 
 
-def draw_navigation(total_rows: int) -> None:
-    prev_col, row_col, next_col, jump_col = st.columns([1, 2, 1, 2])
+def draw_navigation(total_rows: int) -> bool:
+    st.divider()
+    prev_col, index_col, jump_col, next_col, save_col = st.columns([1, 1.1, 1.2, 1, 1.15])
     with prev_col:
         if st.button("Previous", use_container_width=True):
             st.session_state["row_index"] = max(st.session_state["row_index"] - 1, 0)
             st.rerun()
-    with row_col:
-        st.caption(f"Current index: {st.session_state['row_index'] + 1}")
+    with index_col:
+        st.caption(f"Row {st.session_state['row_index'] + 1} of {total_rows}")
+    with jump_col:
+        jump_to = st.number_input(
+            "Jump to row",
+            min_value=1,
+            max_value=total_rows,
+            value=st.session_state["row_index"] + 1,
+            label_visibility="collapsed",
+        )
+        if jump_to != st.session_state["row_index"] + 1:
+            st.session_state["row_index"] = int(jump_to) - 1
+            st.rerun()
     with next_col:
         if st.button("Next", use_container_width=True):
             st.session_state["row_index"] = min(st.session_state["row_index"] + 1, total_rows - 1)
             st.rerun()
-    with jump_col:
-        jump_to = st.number_input("Jump to row number", min_value=1, max_value=total_rows, value=st.session_state["row_index"] + 1)
-        if jump_to != st.session_state["row_index"] + 1:
-            st.session_state["row_index"] = int(jump_to) - 1
-            st.rerun()
+    with save_col:
+        return st.button("Save", type="primary", use_container_width=True)
+    return False
 
 
 def to_bool(value: Any) -> bool:
