@@ -89,17 +89,6 @@ def main() -> None:
     sheet_id = get_default_sheet_id()
     st.session_state["google_sheet_error"] = ""
     sheet = get_google_sheet(sheet_id)
-    if sheet is None:
-        if not sheet_id:
-            st.sidebar.warning("Google Sheets is not configured; saving local backup only.")
-        else:
-            st.sidebar.warning(
-                "Google Sheets unavailable; saving local copy only. "
-                "Ask the app admin to check the sheet ID, API setup, or sharing permissions."
-            )
-            annotator = str(st.session_state.get("annotator", "")).strip()
-            if slugify(annotator).lower() == "venus" and st.session_state.get("google_sheet_error"):
-                st.sidebar.error(st.session_state["google_sheet_error"])
 
     st.session_state.setdefault("annotator", "")
     annotator = str(st.session_state.get("annotator", "")).strip()
@@ -199,13 +188,13 @@ def load_brand_vocab() -> list[str]:
 
 def show_login_screen(manifest: pd.DataFrame, sheet) -> None:
     st.markdown("### Annotator Login")
-    st.caption("Enter your assigned annotator ID to continue. Your progress is saved automatically.")
+    st.caption("Enter your assigned annotator ID, then click Continue. Your progress is saved automatically.")
 
     col_left, col_right = st.columns([1, 1])
     with col_left:
         annotator_id = st.text_input(
             "Annotator ID",
-            placeholder="e.g. venu, annotator01",
+            placeholder="",
             key="login_annotator_input",
         )
         if st.button("Continue", type="primary", use_container_width=True):
@@ -218,10 +207,6 @@ def show_login_screen(manifest: pd.DataFrame, sheet) -> None:
                 st.rerun()
     with col_right:
         st.metric("Rows in dataset", len(manifest))
-        if sheet is not None:
-            st.success("Autosave is connected")
-        else:
-            st.warning("Autosave is not connected. Local backup will be used.")
 
 
 def find_next_unfinished_index(
