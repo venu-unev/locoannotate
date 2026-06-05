@@ -577,29 +577,11 @@ def draw_brand_input(existing: dict[str, Any], brand_vocab: list[str], row_id: s
 def draw_dimensions_input(existing: dict[str, Any], row_id: str) -> str:
     existing_value = str(existing.get("dimensions", "")).strip()
     parsed = parse_dimension(existing_value)
-    manual_default = bool(existing_value and not parsed)
-    manual = st.checkbox(
-        "Manual",
-        value=manual_default,
-        key=f"{row_id}_dimensions_manual",
-    )
-    if manual:
-        return st.text_input(
-            "Dimensions",
-            value=existing_value,
-            key=f"{row_id}_dimensions_manual_value",
-        ).strip()
-
     parsed = parsed or {}
-    top_cols = st.columns([0.8, 1.1, 1.1])
-    with top_cols[0]:
-        prefix = st.selectbox(
-            "Prefix",
-            DIMENSION_PREFIXES,
-            index=option_index(DIMENSION_PREFIXES, parsed.get("prefix", "")),
-            key=f"{row_id}_dimension_prefix",
-        )
-    with top_cols[1]:
+    manual_default = existing_value if existing_value and not parsed else ""
+
+    main_cols = st.columns([1.2, 1.2, 0.9, 1])
+    with main_cols[0]:
         width = st.selectbox(
             "Width",
             DIMENSION_WIDTHS,
@@ -607,7 +589,7 @@ def draw_dimensions_input(existing: dict[str, Any], row_id: str) -> str:
             placeholder="Width",
             key=f"{row_id}_dimension_width",
         )
-    with top_cols[2]:
+    with main_cols[1]:
         aspect = st.selectbox(
             "Aspect",
             DIMENSION_ASPECTS,
@@ -615,16 +597,14 @@ def draw_dimensions_input(existing: dict[str, Any], row_id: str) -> str:
             placeholder="Aspect",
             key=f"{row_id}_dimension_aspect",
         )
-
-    mid_cols = st.columns([1, 1, 1])
-    with mid_cols[0]:
+    with main_cols[2]:
         construction = st.selectbox(
-            "Type",
+            "R/ZR",
             DIMENSION_CONSTRUCTIONS,
             index=option_index(DIMENSION_CONSTRUCTIONS, parsed.get("construction", "R")),
             key=f"{row_id}_dimension_construction",
         )
-    with mid_cols[1]:
+    with main_cols[3]:
         rim = st.selectbox(
             "Rim",
             DIMENSION_RIMS,
@@ -632,32 +612,58 @@ def draw_dimensions_input(existing: dict[str, Any], row_id: str) -> str:
             placeholder="Rim",
             key=f"{row_id}_dimension_rim",
         )
-    with mid_cols[2]:
-        load = st.selectbox(
-            "Load",
-            DIMENSION_LOADS,
-            index=option_index(DIMENSION_LOADS, parsed.get("load", "")),
-            key=f"{row_id}_dimension_load",
-        )
 
-    bottom_cols = st.columns([1, 1])
-    with bottom_cols[0]:
-        speed = st.selectbox(
-            "Speed",
-            DIMENSION_SPEEDS,
-            index=option_index(DIMENSION_SPEEDS, parsed.get("speed", "")),
-            key=f"{row_id}_dimension_speed",
-        )
-    with bottom_cols[1]:
-        suffix = st.selectbox(
-            "Suffix",
-            DIMENSION_SUFFIXES,
-            index=option_index(DIMENSION_SUFFIXES, parsed.get("suffix", "")),
-            key=f"{row_id}_dimension_suffix",
-        )
+    prefix = parsed.get("prefix", "")
+    load = parsed.get("load", "")
+    speed = parsed.get("speed", "")
+    suffix = parsed.get("suffix", "")
+    manual_override = ""
+
+    with st.expander("More options"):
+        opt_cols = st.columns([1, 1, 1])
+        with opt_cols[0]:
+            prefix = st.selectbox(
+                "Prefix",
+                DIMENSION_PREFIXES,
+                index=option_index(DIMENSION_PREFIXES, prefix),
+                key=f"{row_id}_dimension_prefix",
+            )
+        with opt_cols[1]:
+            load = st.selectbox(
+                "Load",
+                DIMENSION_LOADS,
+                index=option_index(DIMENSION_LOADS, load),
+                key=f"{row_id}_dimension_load",
+            )
+        with opt_cols[2]:
+            speed = st.selectbox(
+                "Speed",
+                DIMENSION_SPEEDS,
+                index=option_index(DIMENSION_SPEEDS, speed),
+                key=f"{row_id}_dimension_speed",
+            )
+
+        suffix_cols = st.columns([1, 1])
+        with suffix_cols[0]:
+            suffix = st.selectbox(
+                "Suffix",
+                DIMENSION_SUFFIXES,
+                index=option_index(DIMENSION_SUFFIXES, suffix),
+                key=f"{row_id}_dimension_suffix",
+            )
+        with suffix_cols[1]:
+            manual_override = st.text_input(
+                "Manual override",
+                value=manual_default,
+                key=f"{row_id}_dimensions_manual_value",
+            ).strip()
+
+    if manual_override:
+        st.text_input("Saved dimension", value=manual_override, disabled=True, key=f"{row_id}_dimension_preview")
+        return manual_override
 
     preview = format_dimension(prefix, width, aspect, construction, rim, load, speed, suffix)
-    st.text_input("Preview", value=preview, disabled=True, key=f"{row_id}_dimension_preview")
+    st.text_input("Saved dimension", value=preview, disabled=True, key=f"{row_id}_dimension_preview")
     return preview
 
 
