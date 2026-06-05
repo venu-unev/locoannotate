@@ -141,7 +141,13 @@ def main() -> None:
 
     show_review = slugify(annotator).lower() == "venus"
     values = draw_annotation_form(existing, brand_vocab, row_id, show_review)
-    submitted = draw_navigation(len(manifest), show_review)
+    missing_fields = missing_required_fields(values)
+    submitted = draw_navigation(len(manifest), show_review, disabled=bool(missing_fields))
+    if missing_fields:
+        st.caption(
+            "Before saving, enter text or mark Not visible for: "
+            + ", ".join(field.title() for field in missing_fields)
+        )
 
     if submitted:
         record = build_annotation_record(row, values)
@@ -852,11 +858,21 @@ def build_annotation_record(row: dict[str, Any], values: dict[str, Any]) -> dict
     return record
 
 
-def draw_navigation(total_rows: int, show_review: bool) -> bool:
+def missing_required_fields(values: dict[str, Any]) -> list[str]:
+    missing = []
+    for field in FIELD_NAMES:
+        value = str(values.get(field, "")).strip()
+        status = normalize_status(values.get(f"{field}_status", "complete"))
+        if not value and status != "not_visible":
+            missing.append(field)
+    return missing
+
+
+def draw_navigation(total_rows: int, show_review: bool, disabled: bool = False) -> bool:
     if not show_review:
         left, center, right = st.columns([1.4, 1, 1.4])
         with center:
-            return st.button("Save", type="primary", use_container_width=True)
+            return st.button("Save", type="primary", use_container_width=True, disabled=disabled)
 
     st.divider()
     prev_col, index_col, jump_col, next_col, save_col = st.columns([1, 1.1, 1.2, 1, 1.15])
@@ -882,7 +898,7 @@ def draw_navigation(total_rows: int, show_review: bool) -> bool:
             st.session_state["row_index"] = min(st.session_state["row_index"] + 1, total_rows - 1)
             st.rerun()
     with save_col:
-        return st.button("Save", type="primary", use_container_width=True)
+        return st.button("Save", type="primary", use_container_width=True, disabled=disabled)
     return False
 
 
