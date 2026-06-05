@@ -153,7 +153,7 @@ The app initializes the first worksheet with:
 timestamp_utc, annotator, row_id, raw_id,
 front_url, rear_url, parallel_url,
 brand, brand_status,
-model, model_status,
+model, model_family, model_variant, model_extra, model_status,
 dimensions, dimensions_status,
 needs_review, skip_row, notes
 ```

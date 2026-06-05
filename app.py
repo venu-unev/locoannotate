@@ -46,6 +46,9 @@ SHEET_HEADERS = [
     "brand",
     "brand_status",
     "model",
+    "model_family",
+    "model_variant",
+    "model_extra",
     "model_status",
     "dimensions",
     "dimensions_status",
@@ -508,11 +511,8 @@ def draw_annotation_form(
     with label_cols[1]:
         with st.container(border=True):
             st.markdown("#### Model")
-            values["model"] = st.text_input(
-                "Model",
-                value=str(existing.get("model", "")),
-                key=f"{row_id}_model",
-            )
+            model_values = draw_model_input(existing, row_id)
+            values.update(model_values)
             values["model_status"] = draw_status_radio("model", existing, row_id)
 
     with label_cols[2]:
@@ -572,6 +572,48 @@ def draw_brand_input(existing: dict[str, Any], brand_vocab: list[str], row_id: s
     if selected:
         return selected
     return existing_brand
+
+
+def draw_model_input(existing: dict[str, Any], row_id: str) -> dict[str, str]:
+    family = str(existing.get("model_family", "")).strip()
+    variant = str(existing.get("model_variant", "")).strip()
+    extra = str(existing.get("model_extra", "")).strip()
+    if not any([family, variant, extra]):
+        family = str(existing.get("model", "")).strip()
+
+    family = st.text_input(
+        "Family",
+        value=family,
+        placeholder="Defender, Dueler, Scorpion",
+        key=f"{row_id}_model_family",
+    )
+    variant = st.text_input(
+        "Variant",
+        value=variant,
+        placeholder="LTX M/S, H/L, ATX",
+        key=f"{row_id}_model_variant",
+    )
+    extra = st.text_input(
+        "Extra text",
+        value=extra,
+        placeholder="Touring, All Season",
+        key=f"{row_id}_model_extra",
+    )
+    model = combine_model_parts(family, variant, extra)
+    if model:
+        st.markdown(f"**Saved model:** `{model}`")
+    else:
+        st.caption("Saved model will appear after entering visible model text.")
+    return {
+        "model": model,
+        "model_family": family.strip(),
+        "model_variant": variant.strip(),
+        "model_extra": extra.strip(),
+    }
+
+
+def combine_model_parts(family: str, variant: str, extra: str) -> str:
+    return " ".join(part.strip() for part in [family, variant, extra] if part.strip())
 
 
 def draw_dimensions_input(existing: dict[str, Any], row_id: str) -> str:
@@ -761,6 +803,9 @@ def build_annotation_record(row: dict[str, Any], values: dict[str, Any]) -> dict
     for field in FIELD_NAMES:
         record[field] = str(values.get(field, "")).strip()
         record[f"{field}_status"] = values.get(f"{field}_status", "complete")
+    record["model_family"] = str(values.get("model_family", "")).strip()
+    record["model_variant"] = str(values.get("model_variant", "")).strip()
+    record["model_extra"] = str(values.get("model_extra", "")).strip()
     record["needs_review"] = bool(values.get("needs_review", False))
     record["skip_row"] = bool(values.get("skip_row", False))
     record["notes"] = str(values.get("notes", "")).strip()
