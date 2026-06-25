@@ -142,14 +142,18 @@ def main() -> None:
     show_review = slugify(annotator).lower() == "venus"
     values = draw_annotation_form(existing, brand_vocab, row_id, show_review)
     missing_fields = missing_required_fields(values)
-    submitted = draw_navigation(len(manifest), show_review, disabled=bool(missing_fields))
+    navigation_action = draw_navigation(len(manifest), show_review, disabled=bool(missing_fields))
     if missing_fields:
         st.caption(
             "Before saving, enter text or mark Not visible for: "
             + ", ".join(field.title() for field in missing_fields)
         )
 
-    if submitted:
+    if navigation_action == "skip":
+        st.session_state["row_index"] = min(row_index + 1, len(manifest) - 1)
+        st.rerun()
+
+    if navigation_action == "save":
         record = build_annotation_record(row, values)
         annotations[row_id] = record
         write_annotations(annotation_csv, annotations)
@@ -868,14 +872,19 @@ def missing_required_fields(values: dict[str, Any]) -> list[str]:
     return missing
 
 
-def draw_navigation(total_rows: int, show_review: bool, disabled: bool = False) -> bool:
+def draw_navigation(total_rows: int, show_review: bool, disabled: bool = False) -> str | None:
     if not show_review:
-        left, center, right = st.columns([1.4, 1, 1.4])
-        with center:
-            return st.button("Save", type="primary", use_container_width=True, disabled=disabled)
+        left, save_col, skip_col, right = st.columns([1.25, 1, 1, 1.25])
+        with save_col:
+            if st.button("Save", type="primary", use_container_width=True, disabled=disabled):
+                return "save"
+        with skip_col:
+            if st.button("Skip", use_container_width=True):
+                return "skip"
+        return None
 
     st.divider()
-    prev_col, index_col, jump_col, next_col, save_col = st.columns([1, 1.1, 1.2, 1, 1.15])
+    prev_col, index_col, jump_col, next_col, save_col, skip_col = st.columns([1, 1.1, 1.2, 1, 1.15, 1.15])
     with prev_col:
         if st.button("Previous", use_container_width=True):
             st.session_state["row_index"] = max(st.session_state["row_index"] - 1, 0)
@@ -898,8 +907,12 @@ def draw_navigation(total_rows: int, show_review: bool, disabled: bool = False) 
             st.session_state["row_index"] = min(st.session_state["row_index"] + 1, total_rows - 1)
             st.rerun()
     with save_col:
-        return st.button("Save", type="primary", use_container_width=True, disabled=disabled)
-    return False
+        if st.button("Save", type="primary", use_container_width=True, disabled=disabled):
+            return "save"
+    with skip_col:
+        if st.button("Skip", use_container_width=True):
+            return "skip"
+    return None
 
 
 def to_bool(value: Any) -> bool:
